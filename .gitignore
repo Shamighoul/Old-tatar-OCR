@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.env
+
+# Downloaded page images and model weights are fetched by scripts, not committed.
+data/raw/
+data/processed/
+models/
+
+# Experiment outputs: only the curated summary tables are committed.
+results/*/
+!results/summary/
+data/annotation/

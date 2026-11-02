@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "old-tatar-ocr"
+version = "0.1.0"
+description = "Reproducible OCR/HTR baseline for historical Old Tatar texts in Arabic script"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = "Apache-2.0"
+dependencies = [
+    "numpy>=1.26",
+    "pillow>=10.0",
+    "opencv-python-headless>=4.8",
+    "pyyaml>=6.0",
+    "rapidfuzz>=3.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# Each OCR backend is an optional extra so that the core (metrics, normalization,
+# preprocessing, evaluation) installs in seconds and unit tests need no model weights.
+paddle = ["paddlepaddle==3.3.1", "paddleocr==3.7.0"]
+kraken = ["kraken==7.1.1"]
+hf = ["torch>=2.9", "transformers>=5,<6", "qwen-vl-utils", "accelerate"]
+gguf = ["llama-cpp-python>=0.3.16"]
+easyocr = ["easyocr>=1.7"]
+data = ["pypdfium2>=4"]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "heavy: needs real model weights / network; run with --run-heavy",
+]

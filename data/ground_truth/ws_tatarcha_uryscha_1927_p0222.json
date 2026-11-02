@@ -1,0 +1,35 @@
+{
+  "id": "ws_tatarcha_uryscha_1927_p0222",
+  "source_id": "ws_tatarcha_uryscha_1927",
+  "page": 222,
+  "wikisource_title": "Page:Татарча-урысча сүзлек (1927).djvu/222",
+  "revid": 1336127,
+  "revision_timestamp": "2026-04-28T01:34:57Z",
+  "revision_user": "Fish bowl",
+  "wikisource_quality": 1,
+  "script_profile": {
+    "arabic": 523,
+    "cyrillic": 566,
+    "latin": 3,
+    "arabic_share": 0.47893772893772896
+  },
+  "uncertain_spans": [
+    "?",
+    "?",
+    "?",
+    "?",
+    "?",
+    "?",
+    "?"
+  ],
+  "unknown_templates": [],
+  "ditto_marks": 0,
+  "conversion_version": "2",
+  "gt_license": "CC BY-SA 4.0 (Wikisource contributors)",
+  "modern_tatar": {
+    "wikisource_title": "Page:Татарча-урысча сүзлек (1927).djvu/tt-Cyrl/222",
+    "revid": 1252017,
+    "wikisource_quality": 1
+  },
+  "image_sha256": "111967af7d4251f0f6c7529207fcc491daa645e30707c5932e78bfe22174135f"
+}

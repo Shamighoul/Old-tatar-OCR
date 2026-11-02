@@ -1,0 +1,5 @@
+# Library scans: level the page, cap resolution, mild local contrast. No binarization.
+exif_orientation: true
+deskew: true
+max_side: 3000
+contrast: clahe
