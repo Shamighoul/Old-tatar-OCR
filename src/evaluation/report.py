@@ -19,7 +19,7 @@ from pathlib import Path
 
 import yaml
 
-from benchmark.manifest import read_manifest, resolve
+from benchmark.manifest import is_scorable, read_manifest, resolve
 from evaluation.evaluate import load_predictions
 from evaluation.scoring import score_run
 from ocr.registry import SPECS
@@ -50,7 +50,7 @@ def num(x: float | None, digits: int = 1) -> str:
 
 
 def build(results: Path, manifest: Path) -> tuple[str, list[dict]]:
-    rows = [r for r in read_manifest(manifest) if r["ground_truth_path"] and r["split"] == "test"]
+    rows = [r for r in read_manifest(manifest) if is_scorable(r) and r["split"] == "test"]
     gts = {r["id"]: resolve(manifest, r["ground_truth_path"]).read_text(encoding="utf-8") for r in rows}
     runs = []
     for run_dir in latest_runs(results):

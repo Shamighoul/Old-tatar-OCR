@@ -9,8 +9,10 @@ logical order.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import os
+from pathlib import Path
 
 from PIL import Image
 
@@ -68,18 +70,23 @@ class KrakenBackend(OCRBackend):
 
         torch.set_num_threads(int(os.environ.get("OLD_TATAR_OCR_THREADS", os.cpu_count() or 1)))
 
-        model_key = self.config["model"]
-        model_file = MODEL_CATALOG[model_key]
-        rec_path = fetch(model_file)
+        if self.config.get("model_path"):  # locally fine-tuned model (Phase 3)
+            rec_path = Path(self.config["model_path"]).expanduser()
+            rec_id = f"{rec_path.name}@{hashlib.sha256(rec_path.read_bytes()).hexdigest()[:12]}"
+            self._license = self.config.get("license", "inherits base model + training data licences")
+        else:
+            model_key = self.config["model"]
+            model_file = MODEL_CATALOG[model_key]
+            rec_path = fetch(model_file)
+            rec_id = f"{model_key}@{model_file.checksum.split(':')[1][:12]} [{model_file.source}]"
+            self._license = model_file.license
         self._segmenter = KrakenLineSegmenter(self.config.get("segmentation_model"),
                                               self.config.get("text_direction", "horizontal-rl"))
         self._rec = RecognitionTaskModel.load_model(rec_path)
         self._rec_cfg = RecognitionInferenceConfig(padding=self.config.get("padding", 16),
                                                    bidi_reordering=self.config.get("bidi_reordering", True),
                                                    num_line_workers=self.config.get("num_line_workers", 2))
-        self.model_version = (f"{model_key}@{model_file.checksum.split(':')[1][:12]} "
-                              f"[{model_file.source}] + seg {self._segmenter.version}")
-        self._license = model_file.license
+        self.model_version = f"{rec_id} + seg {self._segmenter.version}"
 
     def _recognize(self, image: Image.Image) -> OCRResult:
         seg = self._segmenter.segment(image)

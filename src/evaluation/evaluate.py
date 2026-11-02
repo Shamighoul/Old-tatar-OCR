@@ -25,7 +25,7 @@ from pathlib import Path
 import yaml
 from PIL import Image
 
-from benchmark.manifest import read_manifest, resolve
+from benchmark.manifest import is_scorable, read_manifest, resolve
 from evaluation import repro
 from evaluation.scoring import score_run, summary_view
 from ocr.base import BackendUnavailable
@@ -35,7 +35,7 @@ from preprocessing import load_preprocess_config, preprocess
 
 def select_rows(rows: list[dict], split: str, subset: str | None, doc_type: str | None,
                 ids: list[str] | None, limit: int | None) -> list[dict]:
-    out = [r for r in rows if r["ground_truth_path"] and (split == "all" or r["split"] == split)]
+    out = [r for r in rows if is_scorable(r) and (split == "all" or r["split"] == split)]
     if subset:
         out = [r for r in out if r.get("subset") == subset]
     if doc_type:
