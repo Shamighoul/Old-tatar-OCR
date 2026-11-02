@@ -1,0 +1,19 @@
+# Manual, documented corrections of ground-truth *status* (the GT text itself is never edited here).
+# Applied by scripts/fetch_wikisource_benchmark.py on every rebuild, so they survive re-fetching.
+#
+# gt_status: silver_partial  -> the transcription covers only part of the printed page; such pages
+#                               are excluded from page-level metrics until a human completes them.
+
+overrides:
+  ws_tatarcha_uryscha_1927_p0013:
+    gt_status: silver_partial
+    reason: "Wikisource text stops mid-page (after 'نیندی ࢭفۇرمىُ'); the last two paragraphs (~half the page) are missing."
+    checked: "2026-11-02, visual comparison with the page image"
+  ws_tatarcha_uryscha_1927_p0015:
+    gt_status: silver_partial
+    reason: "Only the Arabic-script bibliography is transcribed; the Russian bibliography (lower half) is missing."
+    checked: "2026-11-02, visual comparison with the page image"
+  ws_tatarcha_uryscha_1927_p0225:
+    gt_status: silver_partial
+    reason: "Only the 3-line Arabic title is transcribed; the errata table (Russian words + page/line numbers) is missing."
+    checked: "2026-11-02, visual comparison with the page image"

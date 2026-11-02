@@ -27,7 +27,14 @@ COLUMNS = REQUIRED_COLUMNS + EXTRA_COLUMNS
 TYPES = {"printed", "handwritten"}
 SPLITS = {"train", "val", "test", "unlabeled"}
 EVAL_SPLITS = {"train", "val", "test"}
-GT_STATUSES = {"", "none", "draft_unverified", "silver_unproofread", "silver_proofread", "gold_verified"}
+GT_STATUSES = {"", "none", "draft_unverified", "silver_partial", "silver_unproofread", "silver_proofread",
+               "gold_verified"}
+# GT that does not cover the whole page cannot be scored at page level (see data/gt_overrides.yaml).
+NOT_SCORABLE_STATUSES = {"", "none", "draft_unverified", "silver_partial"}
+
+
+def is_scorable(row: dict[str, str]) -> bool:
+    return bool(row.get("ground_truth_path")) and row.get("gt_status", "") not in NOT_SCORABLE_STATUSES
 
 
 def read_manifest(path: str | Path) -> list[dict[str, str]]:

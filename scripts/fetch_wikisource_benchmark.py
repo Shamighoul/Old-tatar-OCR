@@ -6,8 +6,9 @@ For every source in data/sources.yaml (kind: wikisource) this script
   2. pins each page to a revision id in data/wikisource_lock.json (reproducible GT),
   3. converts wikitext -> plain text (benchmark.wikisource, rules in data/README.md),
   4. downloads the page image rendered by Commons from the public-domain scan,
-  5. writes data/ground_truth/<id>.txt (+ .modern_tatar.txt, .json metadata) and
-     upserts rows into data/benchmark_manifest.csv.
+  5. commits GT through the versioned store (data/gt_history/, current copy in
+     data/ground_truth/<id>.txt; human-corrected versions are never overwritten), writes
+     .modern_tatar.txt / .json metadata and upserts rows into data/benchmark_manifest.csv.
 
 No labels are invented: GT status is taken from the Wikisource quality level
 (1 = not proofread -> silver_unproofread, 3 = proofread -> silver_proofread,
@@ -26,35 +27,20 @@ import sys
 import time
 from pathlib import Path
 
-import requests
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from benchmark.commons import WS_API, api, commons_page_image_url, download  # noqa: E402
+from benchmark.gt_store import GTStore  # noqa: E402
 from benchmark.manifest import read_manifest, write_manifest  # noqa: E402
 from benchmark.wikisource import script_profile, wikitext_to_text  # noqa: E402
 
 DATA = ROOT / "data"
-WS_API = "https://wikisource.org/w/api.php"
-COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 PAGE_NS = 104
-HEADERS = {"User-Agent": "old-tatar-ocr-benchmark/0.1 (research; https://github.com/Shamighoul/Old-tatar-OCR)"}
 QUALITY_TO_STATUS = {1: "silver_unproofread", 2: "silver_unproofread", 3: "silver_proofread", 4: "gold_verified"}
 CORE_ARABIC_SHARE = 0.8
-
-
-def api(url: str, **params) -> dict:
-    params = {"format": "json", "formatversion": "2", **params}
-    for attempt in range(5):
-        r = requests.get(url, params=params, headers=HEADERS, timeout=60)
-        if r.status_code == 429 or r.status_code >= 500:
-            time.sleep(2 ** attempt)
-            continue
-        r.raise_for_status()
-        return r.json()
-    r.raise_for_status()
-    return {}
 
 
 def list_pages(index: str) -> list[dict]:
@@ -81,33 +67,6 @@ def fetch_revisions(revids: list[int]) -> dict[int, dict]:
     return out
 
 
-def commons_page_image_url(file: str, page: int | None, width: int) -> tuple[str, dict]:
-    info = api(COMMONS_API, action="query", titles="File:" + file, prop="imageinfo",
-               iiprop="size|sha1|url")["query"]["pages"][0]["imageinfo"][0]
-    native = info.get("width") or width
-    w = min(width, native)
-    params = {"iiurlwidth": w}
-    if page is not None:
-        params["iiurlparam"] = f"page{page}-{w}px"
-    thumb = api(COMMONS_API, action="query", titles="File:" + file, prop="imageinfo",
-                iiprop="url", **params)["query"]["pages"][0]["imageinfo"][0]
-    return thumb.get("thumburl") or thumb["url"], info
-
-
-def download(url: str, target: Path) -> str:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    for attempt in range(5):
-        r = requests.get(url, headers=HEADERS, timeout=120)
-        if r.status_code == 429 or r.status_code >= 500:
-            time.sleep(2 ** attempt + 1)
-            continue
-        r.raise_for_status()
-        target.write_bytes(r.content)
-        return hashlib.sha256(r.content).hexdigest()
-    r.raise_for_status()
-    return ""
-
-
 def page_number(title: str) -> tuple[int | None, bool]:
     tail = title.rsplit("/", 2)
     is_cyrl = len(tail) == 3 and tail[1] == "tt-Cyrl"
@@ -118,6 +77,7 @@ def page_number(title: str) -> tuple[int | None, bool]:
 
 
 def build_source(src: dict, lock: dict, update_lock: bool, width: int) -> list[dict]:
+    store = GTStore(DATA)
     index = src["wikisource_index"]
     prefix = f"Page:{index}/"
     if update_lock or not any(t.startswith(prefix) for t in lock):
@@ -143,7 +103,16 @@ def build_source(src: dict, lock: dict, update_lock: bool, width: int) -> list[d
         rid = f"{src['source_id']}_p{n:04d}"
         gt_dir = DATA / "ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
-        (gt_dir / f"{rid}.txt").write_text(text + "\n", encoding="utf-8")
+        # GT goes through the versioned store: a Wikisource revision becomes a new version only while
+        # the current GT still comes from Wikisource; human-corrected versions are never overwritten.
+        source_ref = f"wikisource:{rev['title']}@rev{lock[rev['title']]}"
+        wiki_status = QUALITY_TO_STATUS.get(rev["quality"], "silver_unproofread")
+        current = store.current(rid)
+        if current is None or (current["source"].startswith("wikisource:") and current["source"] != source_ref):
+            store.commit(rid, text, wiki_status, author=rev["user"], source=source_ref,
+                         note="Wikisource import" if current is None else "Wikisource revision update")
+            current = store.current(rid)
+        gt_status = wiki_status if current["source"].startswith("wikisource:") else current["status"]
         meta = {"id": rid, "source_id": src["source_id"], "page": n, "wikisource_title": rev["title"],
                 "revid": lock[rev["title"]], "revision_timestamp": rev["timestamp"], "revision_user": rev["user"],
                 "wikisource_quality": rev["quality"], "script_profile": profile, **conv,
@@ -157,6 +126,8 @@ def build_source(src: dict, lock: dict, update_lock: bool, width: int) -> list[d
 
         image_rel = Path("raw") / src["source_id"] / f"p{n:04d}.jpg"
         image_path = DATA / image_rel
+        meta_path = gt_dir / f"{rid}.json"
+        previous = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
         if not image_path.exists():
             url, finfo = commons_page_image_url(src["commons_file"], n, width)
             meta["image_sha256"] = download(url, image_path)
@@ -164,15 +135,22 @@ def build_source(src: dict, lock: dict, update_lock: bool, width: int) -> list[d
             meta["commons_file_sha1"] = finfo.get("sha1")
             time.sleep(0.5)
         else:
+            # Keep image provenance across rebuilds; look it up (no download) if it was never recorded.
             meta["image_sha256"] = hashlib.sha256(image_path.read_bytes()).hexdigest()
-        (gt_dir / f"{rid}.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            if previous.get("image_url"):
+                meta["image_url"] = previous["image_url"]
+                meta["commons_file_sha1"] = previous.get("commons_file_sha1")
+            else:
+                url, finfo = commons_page_image_url(src["commons_file"], n, width)
+                meta["image_url"], meta["commons_file_sha1"] = url, finfo.get("sha1")
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
         rows.append({
             "id": rid, "image_path": str(image_rel), "source_id": src["source_id"], "page": str(n),
             "type": src["type"], "script_style": src["script_style"], "approx_year": str(src["approx_year"]),
             "ground_truth_path": f"ground_truth/{rid}.txt", "split": src["split"],
             "subset": "core" if profile["arabic_share"] >= CORE_ARABIC_SHARE else "mixed",
-            "language": src["language"], "gt_status": QUALITY_TO_STATUS.get(rev["quality"], "silver_unproofread"),
+            "language": src["language"], "gt_status": gt_status,
             "license": f"image: {src['image_license']}; GT: {src['gt_license']}",
             "notes": f"uncertain_spans={len(conv['uncertain_spans'])}; arabic_share={profile['arabic_share']:.2f}",
         })
@@ -213,6 +191,16 @@ def main() -> int:
         elif src["kind"] == "commons_image":
             row = build_unlabeled(src, args.width)
             existing[row["id"]] = row
+
+    overrides_path = DATA / "gt_overrides.yaml"
+    overrides = (yaml.safe_load(overrides_path.read_text(encoding="utf-8")) or {}).get("overrides", {}) \
+        if overrides_path.exists() else {}
+    for rid, ov in overrides.items():
+        if rid in existing:
+            existing[rid]["gt_status"] = ov["gt_status"]
+            note = f"override: {ov['gt_status']} (data/gt_overrides.yaml)"
+            if note not in existing[rid].get("notes", ""):
+                existing[rid]["notes"] = f"{existing[rid].get('notes', '')}; {note}".strip("; ")
 
     lock_path.write_text(json.dumps(dict(sorted(lock.items())), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     write_manifest(list(existing.values()), manifest_path)

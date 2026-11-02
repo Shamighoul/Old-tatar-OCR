@@ -4,6 +4,12 @@
 # kind: wikisource  -> page images from a Wikimedia Commons PDF/DjVu, ground truth from
 #                      the Wikisource ProofreadPage transcription of the same page.
 # kind: commons_image -> single image without ground truth (qualitative examples only).
+# kind: commons_pages -> selected pages of a Commons scan to be annotated by humans (Phase 2);
+#                        they stay split=unlabeled until verified GT exists, `planned_split`
+#                        says where the source will go.
+#
+# family: sources sharing a series / press / scribe. A family must not span train/val/test
+#         (python -m benchmark.sources validate enforces it).
 
 sources:
   - source_id: ws_tatar_maktabe_1915
@@ -20,6 +26,8 @@ sources:
     wikisource_index: "Татар мәктәбе - 01 - Рәсемле төрки әлифба (1915).pdf"
     image_license: "Public domain (Wikimedia Commons)"
     gt_license: "CC BY-SA 4.0 (Wikisource contributors)"
+    family: tatar_maktabe_series_orenburg_1914_1916
+    font: "naskh, Husainov press (Orenburg)"
     split: test
 
   - source_id: ws_rus_maktaplare_1925
@@ -36,6 +44,8 @@ sources:
     wikisource_index: "Рус мәктәпләре өчен татар теле дәреслеге (беренче китап).pdf"
     image_license: "Public domain (Wikimedia Commons)"
     gt_license: "CC BY-SA 4.0 (Wikisource contributors)"
+    family: korbangaliev_kazan_1920s
+    font: "naskh, yaña imlâ type (Kazan, 1920s)"
     split: test
 
   - source_id: ws_tatarcha_uryscha_1927
@@ -52,6 +62,8 @@ sources:
     wikisource_index: "Татарча-урысча сүзлек (1927).djvu"
     image_license: "Public domain (Wikimedia Commons)"
     gt_license: "CC BY-SA 4.0 (Wikisource contributors)"
+    family: korbangaliev_kazan_1920s
+    font: "naskh, yaña imlâ type + Cyrillic (Kazan, 1927)"
     split: test
 
   - source_id: commons_bukvar_1912_photo
@@ -64,4 +76,82 @@ sources:
     commons_file: "Tatar alphabet book, 1912 (2023-12-05).jpg"
     image_license: "CC BY-SA 4.0, photo by Vyacheslav Kirillin (Wikimedia Commons)"
     notes: "Phone-style photo of an open book: used to exercise the mobile preprocessing path; no ground truth"
+    split: unlabeled
+
+  # ---- Phase 2 pilot: pre-revolutionary printed books to annotate (all Public Domain on Commons) ----
+  # Pages are chosen from the body text; pre-annotation by kraken-ppocrv6, correction by humans.
+  - source_id: commons_salima_1898
+    kind: commons_pages
+    title: "Сәлимә яки гыйффәт (سلیمه یاکه عِفت)"
+    author: "Various (per Commons)"
+    publisher: "unknown (per Commons record)"
+    place: "unknown"
+    approx_year: 1898
+    type: printed
+    script_style: iske_imla_naskh
+    font: "naskh (to be described by annotator)"
+    language: tt-Arab (Old Tatar, pre-reform orthography)
+    commons_file: "Сэлимэ яки гыйффэт. سلیمه یاکه عِفت.pdf"
+    pages: [10, 30, 50]
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "TBD by project owner (own annotations)"
+    family: salima_1898
+    planned_split: train
+    split: unlabeled
+
+  - source_id: commons_manbit_1906
+    kind: commons_pages
+    title: "Манбит аль-ма'ариф (منبت المعارف)"
+    author: "Шакирзян аль-Хамиди"
+    publisher: "unknown (per Commons record)"
+    place: "unknown"
+    approx_year: 1906
+    type: printed
+    script_style: iske_imla_naskh
+    font: "naskh (to be described by annotator)"
+    language: tt-Arab (Old Tatar, pre-reform orthography)
+    commons_file: "Манбит аль-ма'ариф. منبت المعارف.pdf"
+    pages: [10, 25, 40]
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "TBD by project owner (own annotations)"
+    family: hamidi_1906
+    planned_split: train
+    split: unlabeled
+
+  - source_id: commons_bigiev_1912
+    kind: commons_pages
+    title: "Халык назарына берничә мәсьәлә"
+    author: "Муса Бигиев (Musa Bigeev)"
+    publisher: "unknown (per Commons record)"
+    place: "unknown"
+    approx_year: 1912
+    type: printed
+    script_style: iske_imla_naskh
+    font: "naskh (to be described by annotator)"
+    language: tt-Arab (Old Tatar, pre-reform orthography)
+    commons_file: "Bigiev M Khalyk Nezaryna Berniche Mesele.pdf"
+    pages: [10, 40, 70]
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "TBD by project owner (own annotations)"
+    family: bigiev_1912
+    planned_split: train
+    split: unlabeled
+
+  - source_id: commons_barudi_1917
+    kind: commons_pages
+    title: "Дамелла Галимҗан әл-Баруди. Тәрҗемәи хәле. Беренче җөз"
+    author: "Yusuf Akçura (per Commons)"
+    publisher: "unknown (per Commons record)"
+    place: "Kazan?"
+    approx_year: 1917
+    type: printed
+    script_style: iske_imla_naskh
+    font: "naskh (to be described by annotator)"
+    language: tt-Arab (Old Tatar, pre-reform orthography)
+    commons_file: "Дамелла Галимжан эл-Баруди. Тэржемэи хэле. Беренче жозэ. داملا عالم جان البارودی. ترجمه حالی. برنچی جزء.pdf"
+    pages: [20, 30, 50]  # p10 is blank
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "TBD by project owner (own annotations)"
+    family: barudi_biography_1917
+    planned_split: val
     split: unlabeled

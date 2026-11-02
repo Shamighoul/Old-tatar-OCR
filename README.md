@@ -3,16 +3,20 @@
 Исследовательский репозиторий системы распознавания исторических старотатарских текстов,
 написанных арабской графикой (иске имля до 1920 г., яңа имля 1920–1927 гг.).
 
-Работа ведётся поэтапно. **Сейчас реализованы Phase 0 (исследование) и Phase 1 (baseline):**
-воспроизводимая инфраструктура, которая запускает несколько готовых OCR/HTR-моделей на одних и тех же
-реальных старотатарских страницах и честно измеряет CER/WER.
+Работа ведётся поэтапно. Реализованы **Phase 0** (исследование), **Phase 1** (baseline: инфраструктура,
+которая запускает несколько готовых OCR/HTR-моделей на одних и тех же реальных старотатарских страницах и
+измеряет CER/WER; замеры выполнены частично) и инструменты **Phase 2** (сбор и разметка датасета:
+версии GT, PAGE XML, предразметка для людей, пилот на 4 книгах).
 
 | документ | содержание |
 |---|---|
 | [docs/model_research.md](docs/model_research.md) | Phase 0: модели, лицензии, применимость |
 | [docs/baseline_report.md](docs/baseline_report.md) | Phase 1: результаты сравнения (**предварительные**, прогоны не завершены) |
 | [docs/architecture.md](docs/architecture.md) | модули и архитектурные решения (выбор / альтернативы / риски) |
-| [docs/dataset.md](docs/dataset.md) | стандарт данных, бенчмарк, нужная человеческая разметка |
+| [docs/dataset.md](docs/dataset.md) | стандарт данных, бенчмарк, план сбора Phase 2, нужная человеческая разметка |
+| [docs/annotation_guidelines.md](docs/annotation_guidelines.md) | правила разметки и рабочий процесс (eScriptorium) |
+| [docs/transfer_data.md](docs/transfer_data.md) | арабографические датасеты для transfer learning и их лицензии |
+| [docs/finetuning.md](docs/finetuning.md) | Phase 3: стратегии дообучения, протокол, условие старта, технический прогон |
 | [docs/experiments.md](docs/experiments.md) | протокол и журнал экспериментов |
 
 Целевой конвейер (OCR, транскрипция и перевод — независимые модули):
@@ -136,6 +140,39 @@ python -m evaluation.error_analysis --group core   # → results/summary/error_a
 python scripts/make_annotation_tasks.py --run results/kraken-ppocrv6/<run> --model kraken-ppocrv6
 ```
 
+## Phase 2: сбор старотатарского датасета
+
+Цикл «машинная предразметка → исправление человеком → версия GT → строки для обучения»
+(подробно: [docs/dataset.md](docs/dataset.md), правила: [docs/annotation_guidelines.md](docs/annotation_guidelines.md)):
+
+```bash
+python scripts/catalog_commons.py                 # каталог PD-книг на Commons → data/candidates/commons_tatar.csv
+python -m benchmark.sources validate              # метаданные источников + семейства не пересекают сплиты
+python scripts/fetch_source_pages.py              # выбранные страницы в исходном разрешении (из PDF)
+python scripts/preannotate.py --batch pilot-01    # черновики PAGE XML для eScriptorium + задачи по уверенности
+python scripts/import_annotations.py export/*.xml --status silver_proofread --author "Имя"
+python -m benchmark.gt_store log <page_id>        # история версий GT страницы
+python scripts/export_lines.py                    # строки (изображение + текст) по сплитам
+```
+
+GT версионируется в `data/gt_history/` (каждая правка — новая неизменяемая версия; машинные черновики никогда
+не становятся GT). Данные других арабографических языков для transfer learning и их лицензии —
+[docs/transfer_data.md](docs/transfer_data.md).
+
+## Phase 3: дообучение
+
+Конвейер готов; реальное дообучение начнётся, когда появятся проверенные людьми train/val-страницы
+(условие старта — [docs/finetuning.md](docs/finetuning.md)):
+
+```bash
+python scripts/finetune_kraken.py --name ppocrv6-oldtatar-v1 --base ppocrv6-medium --evaluate core
+python scripts/learning_curve.py --base ppocrv6-medium --sizes 5 10 25 50   # сколько разметки нужно
+python scripts/finetune_kraken.py --synthetic-smoke --name smoke --max-epochs 3 --quit fixed  # проверка конвейера
+```
+
+Тестовые страницы в обучение не попадают по построению (split из манифеста, проверено тестами); дообученная
+модель оценивается тем же раннером, что и baseline (`kraken-custom`).
+
 ## Тесты
 
 ```bash
@@ -154,9 +191,11 @@ src/text/              # нормализация арабицы: хранени
 src/evaluation/        # metrics, evaluate, scoring, report, repro
 src/benchmark/         # манифест (+валидация сплитов), Wikisource → GT
 src/pipeline/          # схема результата raw_ocr / corrected_ocr / modern_tatar / translation
+src/training/          # Phase 3: сборка обучающего набора, ketos fine-tuning, синтетика
 configs/preprocess/    # original (по умолчанию), scan, mobile
 data/                  # manifest, GT, sources; изображения скачиваются скриптом
-scripts/               # fetch_wikisource_benchmark, run_baseline, make_annotation_tasks
+scripts/               # бенчмарк (fetch_wikisource_benchmark, run_phase1), Phase 2 (catalog_commons,
+                       # fetch_source_pages, preannotate, import_annotations, export_lines)
 docs/                  # исследование, архитектура, данные, эксперименты, отчёт
 ```
 

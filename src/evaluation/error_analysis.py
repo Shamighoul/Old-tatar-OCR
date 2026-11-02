@@ -20,7 +20,7 @@ from pathlib import Path
 
 from rapidfuzz.distance import Levenshtein
 
-from benchmark.manifest import read_manifest, resolve
+from benchmark.manifest import is_scorable, read_manifest, resolve
 from evaluation.evaluate import load_predictions
 from evaluation.metrics import char_confusions, char_counts
 from evaluation.report import GROUPS, latest_runs, pct
@@ -39,7 +39,7 @@ def letter_recall(ref: str, hyp: str) -> tuple[Counter, Counter]:
 
 
 def build(results: Path, manifest: Path, group: str, preprocess: str) -> str:
-    rows = [r for r in read_manifest(manifest) if r["ground_truth_path"] and r["split"] == "test" and GROUPS[group](r)]
+    rows = [r for r in read_manifest(manifest) if is_scorable(r) and r["split"] == "test" and GROUPS[group](r)]
     ids = {r["id"] for r in rows}
     gts = {r["id"]: resolve(manifest, r["ground_truth_path"]).read_text(encoding="utf-8") for r in rows}
     models = []
