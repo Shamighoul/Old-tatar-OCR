@@ -67,11 +67,15 @@ def build(results: Path, manifest: Path) -> tuple[str, list[dict]]:
         if not g_rows:
             continue
         ids = {r["id"] for r in g_rows}
+        # One entry per (model, preprocessing): the most recent run that covers every page of the group
+        # (e.g. a clean single-process core-only rerun supersedes the core part of an older full run).
+        covering: dict[tuple[str, str], dict] = {}
+        for run in sorted(runs, key=lambda r: r["dir"].name):
+            if ids <= set(run["preds"]):
+                covering[(run["model"], run["preprocess"])] = run
         table = []
-        for run in runs:
+        for run in covering.values():
             ok_ids = {i for i, p in run["preds"].items() if not p.get("error")}
-            if not ids <= set(run["preds"]):
-                continue
             s = score_run(g_rows, gts, run["preds"])
             o = s["overall"]
             spec = SPECS.get(run["model"])
