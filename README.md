@@ -113,12 +113,21 @@ GPU memory: n/a (CPU run)   peak RSS: … MB
 (`config.yaml` фиксирует git commit, версию/хэш модели, хэш датасета, конфиг, seed, железо и версии библиотек).
 Долгий прогон можно продолжить `--resume <run_dir>`, пересчитать метрики без инференса — `--rescore <run_dir>`.
 
-Все модели подряд и сводная таблица:
+Весь протокол Phase 1 одной командой (перезапускаемый: готовые прогоны пропускаются, прерванные продолжаются;
+веса качаются параллельно с проверкой checksum):
 
 ```bash
-bash scripts/run_baseline.sh                       # все доступные бэкенды, исходные изображения
+setsid nohup bash scripts/run_phase1.sh > results/logs/phase1.log 2>&1 &
+```
+
+Отдельные шаги:
+
+```bash
+python scripts/download_models.py churro azra      # заранее скачать веса (с докачкой)
+bash scripts/run_baseline.sh                       # все бэкенды, исходные изображения
 PREPROCESS=scan MODELS="kraken-ppocrv6 paddle" bash scripts/run_baseline.sh
 python -m evaluation.report                        # → results/summary/baseline_summary.md
+python -m evaluation.error_analysis --group core   # → results/summary/error_analysis_core.md
 ```
 
 Задачи для разметчиков (вычитка silver GT, черновики для неразмеченных страниц, строки с низкой уверенностью):
