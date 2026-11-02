@@ -1,0 +1,7 @@
+# Phone photos: find the page, undo perspective, then the scan pipeline.
+exif_orientation: true
+document_detection: true
+perspective_correction: true
+deskew: true
+max_side: 3000
+contrast: clahe

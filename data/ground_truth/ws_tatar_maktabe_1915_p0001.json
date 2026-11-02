@@ -1,0 +1,27 @@
+{
+  "id": "ws_tatar_maktabe_1915_p0001",
+  "source_id": "ws_tatar_maktabe_1915",
+  "page": 1,
+  "wikisource_title": "Page:Татар мәктәбе - 01 - Рәсемле төрки әлифба (1915).pdf/1",
+  "revid": 1336088,
+  "revision_timestamp": "2026-04-28T01:27:02Z",
+  "revision_user": "Fish bowl",
+  "wikisource_quality": 1,
+  "script_profile": {
+    "arabic": 112,
+    "cyrillic": 57,
+    "latin": 0,
+    "arabic_share": 0.6627218934911243
+  },
+  "uncertain_spans": [],
+  "unknown_templates": [],
+  "ditto_marks": 0,
+  "conversion_version": "2",
+  "gt_license": "CC BY-SA 4.0 (Wikisource contributors)",
+  "modern_tatar": {
+    "wikisource_title": "Page:Татар мәктәбе - 01 - Рәсемле төрки әлифба (1915).pdf/tt-Cyrl/1",
+    "revid": 1256013,
+    "wikisource_quality": 1
+  },
+  "image_sha256": "f54737efddc8609f007a315ab3a6af93402602d8c367b31125b588c92f685250"
+}

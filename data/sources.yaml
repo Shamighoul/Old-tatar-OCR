@@ -1,0 +1,67 @@
+# Real Old Tatar sources used by the benchmark. One entry = one source_id
+# (book / manuscript / newspaper issue). Splits are assigned per source, never per page.
+#
+# kind: wikisource  -> page images from a Wikimedia Commons PDF/DjVu, ground truth from
+#                      the Wikisource ProofreadPage transcription of the same page.
+# kind: commons_image -> single image without ground truth (qualitative examples only).
+
+sources:
+  - source_id: ws_tatar_maktabe_1915
+    kind: wikisource
+    title: "Татар мәктәбе. 1нче китап: Рәсемле төрки әлифба (تاتار مكتبی. برنچی كتاب)"
+    author: "Г. Биктави (ع. بیكتاوی)"
+    publisher: "Хөсәенов көтепханәсе / типо-литография Т.Д. «А. А. Хусаинов и Ко»"
+    place: Orenburg
+    approx_year: 1915
+    type: printed
+    script_style: iske_imla_naskh
+    language: tt-Arab (Old Tatar, pre-reform orthography)
+    commons_file: "Татар мәктәбе - 01 - Рәсемле төрки әлифба (1915).pdf"
+    wikisource_index: "Татар мәктәбе - 01 - Рәсемле төрки әлифба (1915).pdf"
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "CC BY-SA 4.0 (Wikisource contributors)"
+    split: test
+
+  - source_id: ws_rus_maktaplare_1925
+    kind: wikisource
+    title: "Рус мәктәпләре өчен татар теле дәреслеге (беренче китап) / روس مەكتەبلەرىُ ئۇچن تاتار تلىُ دەرسلىُگىُ"
+    author: "М. Корбангалиев, Хуҗа Бәдигый"
+    publisher: "Kazan"
+    place: Kazan
+    approx_year: 1925
+    type: printed
+    script_style: yana_imla_naskh
+    language: tt-Arab (Tatar, reformed Arabic script yaña imlâ)
+    commons_file: "Рус мәктәпләре өчен татар теле дәреслеге (беренче китап).pdf"
+    wikisource_index: "Рус мәктәпләре өчен татар теле дәреслеге (беренче китап).pdf"
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "CC BY-SA 4.0 (Wikisource contributors)"
+    split: test
+
+  - source_id: ws_tatarcha_uryscha_1927
+    kind: wikisource
+    title: "Татарча-урысча сүзлек (1927)"
+    author: "М. Корбангалиев, Р. Газизов, И. Кулиев"
+    publisher: "Kazan"
+    place: Kazan
+    approx_year: 1927
+    type: printed
+    script_style: yana_imla_naskh
+    language: tt-Arab + ru (bilingual dictionary)
+    commons_file: "Татарча-урысча сүзлек (1927).djvu"
+    wikisource_index: "Татарча-урысча сүзлек (1927).djvu"
+    image_license: "Public domain (Wikimedia Commons)"
+    gt_license: "CC BY-SA 4.0 (Wikisource contributors)"
+    split: test
+
+  - source_id: commons_bukvar_1912_photo
+    kind: commons_image
+    title: "М. Курбангалиев. Татарский букварь, Казань, 1912 (museum photo)"
+    approx_year: 1912
+    type: printed
+    script_style: iske_imla_naskh
+    language: tt-Arab
+    commons_file: "Tatar alphabet book, 1912 (2023-12-05).jpg"
+    image_license: "CC BY-SA 4.0, photo by Vyacheslav Kirillin (Wikimedia Commons)"
+    notes: "Phone-style photo of an open book: used to exercise the mobile preprocessing path; no ground truth"
+    split: unlabeled

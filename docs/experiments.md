@@ -1,0 +1,45 @@
+# Эксперименты
+
+## Протокол (обязателен для каждого эксперимента)
+
+* Запуск только через `python -m evaluation.evaluate` (или `scripts/run_baseline.sh`).
+* Каждый прогон пишет `results/<model>/<timestamp>-<tag>/config.yaml` с: точной командой, git commit +
+  флагом dirty, именем и версией/хэшем модели (`model_version`), конфигом бэкенда и предобработки,
+  хэшем датасета (манифест + все GT-файлы), seed, железом и версиями библиотек.
+* Метрики только числами: `CER`, `WER`, `normalized CER`, … — никаких «выглядит лучше».
+* Сравнение моделей — только на одинаковом наборе страниц (`python -m evaluation.report` строит таблицы
+  по группам `core` / `mixed` / `all` и включает модель, только если у неё есть предсказания на все страницы группы).
+* Изменение GT или правил нормализации → пересчёт без инференса: `python -m evaluation.evaluate --rescore <run>`.
+
+## Окружение baseline (машина E0)
+
+| параметр | значение |
+|---|---|
+| CPU | AMD Ryzen (Zen 3, Cezanne), 16 потоков, AVX2 |
+| RAM | 13.5 GB (+4 GB swap) |
+| GPU | нет CUDA (встроенная Radeon Vega не используется) |
+| ОС / Python | Linux 7.0, Python 3.13.5 (venv) |
+| библиотеки | torch 2.11.0+cpu, transformers 5.22.1, paddlepaddle 3.3.1, paddleocr 3.7.0, kraken 7.1.1, llama-cpp-python 0.3.36, easyocr 1.7.2, numpy 2.3.5 |
+| сеть | ≈ 0.26 МБ/с (повлияло на выбор квантизации CHURRO) |
+| датасет | 45 размеченных страниц (`split=test`), версия — хэш в каждом `config.yaml` |
+
+## Технические решения, влияющие на числа
+
+| решение | причина | проверка |
+|---|---|---|
+| kraken `batch_size=1` | батчинг строк меняет вывод BiLSTM из-за паддинга: на стр. 1925/148 CER между batch=1 и batch=16 = **10.5%** | замер в сессии 2026-11-02 |
+| общий кэш сегментации BLLA | все kraken-распознаватели и Azra получают идентичные строки | `OLD_TATAR_OCR_SEG_CACHE` |
+| Paddle: `enable_mkldnn=False` | paddle 3.3 + oneDNN падает на PIR-программах PP-OCRv5 (`ConvertPirAttribute2RuntimeAttribute not support`) | воспроизводится на 1-й странице |
+| Paddle: параметры детектора по умолчанию | честный «коробочный» baseline (первый тест с `limit_side_len=1600` пропускал мелкий текст) | — |
+| Paddle: `reverse_text=False` | вывод уже в логическом порядке: CER 26.2% против 78.5% у развёрнутого (стр. 1915/4) | замер |
+| CHURRO: GGUF Q4_K_M + mmproj Q8_0, ≤ 1.6 Мп | CPU-машина и медленная сеть; эталон bf16 до 4 Мп | отклонение помечено в `model_version` |
+| Azra: параметры генерации из model card | `repetition_penalty=1.2`, `no_repeat_ngram_size=3`, строки, ресайз до кратного 64 | — |
+
+## Журнал
+
+| дата | эксперимент | статус | итог |
+|---|---|---|---|
+| 2026-11-02 | E0-smoke: kraken-ottoman / paddle / easyocr / ppocrv6 / phoenix на стр. 1915/4 | готово | norm. CER: ppocrv6 9.8%, ottoman 12.5%, paddle 17.2%, phoenix 23.3%, easyocr 35.5% (одна страница, не для выводов) |
+| 2026-11-02 | E1: все доступные бэкенды, `original` | **прерван** | ppocrv6 26/45 стр., paddle 31/45; предварительные числа на 26 общих стр. — `docs/baseline_report.md` |
+| 2026-11-02 | E2: предобработка `scan` для лучших моделей на `core` | не запущен | — |
+| 2026-11-02 | E3: CHURRO-3B (GGUF) и Azra на `core` | не запущен | веса CHURRO скачаны частично (докачка возобновится), Azra — нет |

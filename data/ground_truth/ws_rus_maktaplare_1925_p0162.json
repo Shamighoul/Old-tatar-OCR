@@ -1,0 +1,26 @@
+{
+  "id": "ws_rus_maktaplare_1925_p0162",
+  "source_id": "ws_rus_maktaplare_1925",
+  "page": 162,
+  "wikisource_title": "Page:Рус мәктәпләре өчен татар теле дәреслеге (беренче китап).pdf/162",
+  "revid": 1336150,
+  "revision_timestamp": "2026-04-28T01:40:20Z",
+  "revision_user": "Fish bowl",
+  "wikisource_quality": 1,
+  "script_profile": {
+    "arabic": 393,
+    "cyrillic": 791,
+    "latin": 0,
+    "arabic_share": 0.33192567567567566
+  },
+  "uncertain_spans": [
+    "جرقلداش",
+    "وقلداش",
+    "ئالمی"
+  ],
+  "unknown_templates": [],
+  "ditto_marks": 0,
+  "conversion_version": "2",
+  "gt_license": "CC BY-SA 4.0 (Wikisource contributors)",
+  "image_sha256": "f2fac02989d41e90fe539ec17b9feef4d87aa95d209bee93aa81bbd70fc553da"
+}
